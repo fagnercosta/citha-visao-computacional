@@ -1,0 +1,214 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "12f8d492-4efc-4202-8b5b-968e1f74a4b1",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from ultralytics import YOLO\n",
+    "import os\n",
+    "\n",
+    "# Verificar se o data.yaml existe\n",
+    "data_yaml = \"wildfire-smoke/data.yaml\"  # Ajuste o caminho conforme necessário\n",
+    "if not os.path.exists(data_yaml):\n",
+    "    print(f\"Erro: Arquivo {data_yaml} não encontrado\")\n",
+    "    exit()\n",
+    "\n",
+    "# Carregar o modelo pré-treinado\n",
+    "model = YOLO(\"yolov8n.pt\")\n",
+    "\n",
+    "# Treinar o modelo\n",
+    "try:\n",
+    "    model.train(data=data_yaml, epochs=20, imgsz=640, batch=16, device='cpu')  # Use device=0 para GPU\n",
+    "except Exception as e:\n",
+    "    print(f\"Erro no treinamento: {e}\")\n",
+    "    exit()\n",
+    "\n",
+    "# Salvar o modelo treinado\n",
+    "model.save(\"yolov8n_queimadas.pt\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "a604e407-919b-40a4-88f6-2a39d9ac794c",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "39d8129b-d28c-48d4-9f4e-23e9ff05fe04",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from ultralytics import YOLO\n",
+    "import cv2\n",
+    "import numpy as np\n",
+    "\n",
+    "# Carregar o modelo treinado\n",
+    "model = YOLO(\"yolov8n_queimadas.pt\")\n",
+    "\n",
+    "cap = cv2.VideoCapture(0)\n",
+    "if not cap.isOpened():\n",
+    "    print(\"Erro: Não foi possível abrir a webcam\")\n",
+    "    exit()\n",
+    "\n",
+    "print(\"Pressione 'q' para fechar a câmera\")\n",
+    "\n",
+    "while True:\n",
+    "    ret, frame = cap.read()\n",
+    "    if not ret:\n",
+    "        print(\"Erro: Falha ao capturar o frame\")\n",
+    "        break\n",
+    "\n",
+    "    # Realizar a predição\n",
+    "    results = model.predict(source=frame, show=False, conf=0.5)\n",
+    "\n",
+    "    # Obter o frame original para desenhar\n",
+    "    annotated_frame = frame.copy()\n",
+    "\n",
+    "    # Verificar as detecções\n",
+    "    for result in results:\n",
+    "        boxes = result.boxes  # Caixas delimitadoras\n",
+    "        for box in boxes:\n",
+    "            # Verificar se a classe detectada é \"fogo\" (substitua pelo ID ou nome correto da classe do seu modelo)\n",
+    "            if result.names[int(box.cls)] == \"fire\":  # Ajuste o nome ou ID da classe conforme seu modelo\n",
+    "                # Obter coordenadas da caixa delimitadora\n",
+    "                x1, y1, x2, y2 = map(int, box.xyxy[0])\n",
+    "                # Desenhar retângulo vermelho no frame\n",
+    "                cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)\n",
+    "                # Adicionar rótulo com o nome da classe\n",
+    "                cv2.putText(annotated_frame, \"Fogo\", (x1, y1 - 10), \n",
+    "                           cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)\n",
+    "\n",
+    "    # Exibir o frame com as detecções\n",
+    "    cv2.imshow(\"YOLOv8 Queimadas\", annotated_frame)\n",
+    "\n",
+    "    if cv2.waitKey(1) & 0xFF == ord('q'):\n",
+    "        print(\"Câmera fechada\")\n",
+    "        break"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "d7062949-f50e-404d-9681-77df02aacec4",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "a72e3125-e79c-449d-aa41-cb5b79ca4195",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "0: 448x640 1 fire, 2 smokes, 100.2ms\n",
+      "Speed: 4.3ms preprocess, 100.2ms inference, 1.3ms postprocess per image at shape (1, 3, 448, 640)\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "True"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from ultralytics import YOLO\n",
+    "import cv2\n",
+    "import numpy as np\n",
+    "\n",
+    "# Carregar o modelo treinado\n",
+    "model = YOLO(\"yolov8n_queimadas.pt\")\n",
+    "\n",
+    "# Carregar a imagem\n",
+    "image_path = \"fumaca.jpg\"  # Substitua pelo caminho da sua imagem\n",
+    "frame = cv2.imread(image_path)\n",
+    "\n",
+    "if frame is None:\n",
+    "    print(\"Erro: Não foi possível carregar a imagem\")\n",
+    "    exit()\n",
+    "\n",
+    "# Realizar a predição\n",
+    "results = model.predict(source=frame, show=False, conf=0.2)\n",
+    "\n",
+    "# Copiar o frame original para desenhar\n",
+    "annotated_frame = frame.copy()\n",
+    "\n",
+    "# Verificar as detecções\n",
+    "for result in results:\n",
+    "    boxes = result.boxes  # Caixas delimitadoras\n",
+    "    for box in boxes:\n",
+    "        # Verificar se a classe detectada é \"fogo\" (substitua pelo ID ou nome correto da classe do seu modelo)\n",
+    "        if result.names[int(box.cls)] == 'smoke':  # Ajuste o nome ou ID da classe conforme seu modelo\n",
+    "            # Obter coordenadas da caixa delimitadora\n",
+    "            x1, y1, x2, y2 = map(int, box.xyxy[0])\n",
+    "            # Desenhar retângulo vermelho no frame\n",
+    "            cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)\n",
+    "            # Adicionar rótulo com o nome da classe\n",
+    "            cv2.putText(annotated_frame, \"Fumaça\", (x1, y1 - 10), \n",
+    "                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)\n",
+    "\n",
+    "        if result.names[int(box.cls)] == 'fire':  # Ajuste o nome ou ID da classe conforme seu modelo\n",
+    "            # Obter coordenadas da caixa delimitadora\n",
+    "            x1, y1, x2, y2 = map(int, box.xyxy[0])\n",
+    "            # Desenhar retângulo vermelho no frame\n",
+    "            cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)\n",
+    "            # Adicionar rótulo com o nome da classe\n",
+    "            cv2.putText(annotated_frame, \"Fogo\", (x1, y1 - 10), \n",
+    "                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)\n",
+    "\n",
+    "# Exibir a imagem com as detecções\n",
+    "cv2.imshow(\"YOLOv8 Queimadas\", annotated_frame)\n",
+    "cv2.waitKey(0)  # Aguarda até que uma tecla seja pressionada\n",
+    "cv2.destroyAllWindows()\n",
+    "\n",
+    "# Opcional: Salvar a imagem com as detecções\n",
+    "cv2.imwrite(\"resultado_queimadas.jpg\", annotated_frame)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "e13b8559-c5b9-46b2-b90a-c49eb268c1a4",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.13.2"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
